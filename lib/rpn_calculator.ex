@@ -4,15 +4,15 @@ defmodule RPNCalculator do
   """
 
   @doc """
-  Hello world.
+  Create a new RPNCalculator model, a struct.
 
   ## Examples
 
-      iex> RPNCalculator.hello()
-      :world
+      iex> RPNCalculator.new()
+      %RPNCalculator.RPNCalculator{rpn_stack: [0], input_digits: "", computed?: false}
 
   """
-  def hello do
-    :world
+  def new do
+    %RPNCalculator.RPNCalculator{}
   end
 end
