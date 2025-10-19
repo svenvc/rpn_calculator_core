@@ -2,10 +2,10 @@ defmodule RPNCalculator.RPNCalculator do
   defstruct rpn_stack: [0], input_digits: "", computed?: false
 
   def process_key(%__MODULE__{} = rpn_calculator, key)
-      when key in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] do
+      when key in ~w(0 1 2 3 4 5 6 7 8 9) do
     if rpn_calculator.input_digits == "" and rpn_calculator.computed? do
       rpn_calculator
-      |> update_rpn_stack(fn [top | tail] -> [0 | [top | tail]] end)
+      |> update_rpn_stack(fn [top | tail] -> [0 | [top | tail]] end, clear_input: false)
     else
       rpn_calculator
     end
@@ -47,7 +47,7 @@ defmodule RPNCalculator.RPNCalculator do
 
     if rpn_calculator.input_digits == "" do
       rpn_calculator
-      |> update_rpn_stack(fn [x | tail] -> [-x | tail] end)
+      |> update_rpn_stack(fn [x | tail] -> [-x | tail] end, clear_input: false)
       |> update_computed?(true)
     else
       rpn_calculator
@@ -64,7 +64,6 @@ defmodule RPNCalculator.RPNCalculator do
         rpn_stack
       end
     end)
-    |> clear_input()
     |> update_x()
   end
 
@@ -82,7 +81,6 @@ defmodule RPNCalculator.RPNCalculator do
   def process_key(%__MODULE__{} = rpn_calculator, "Enter") do
     rpn_calculator
     |> update_rpn_stack(fn [top | tail] -> [top | [top | tail]] end)
-    |> clear_input()
     |> update_computed?(false)
   end
 
@@ -92,7 +90,6 @@ defmodule RPNCalculator.RPNCalculator do
       [x | [y | tail]] -> [x + y | tail]
       rpn_stack -> rpn_stack
     end)
-    |> clear_input()
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "Subtract") do
@@ -101,7 +98,6 @@ defmodule RPNCalculator.RPNCalculator do
       [x | [y | tail]] -> [y - x | tail]
       rpn_stack -> rpn_stack
     end)
-    |> clear_input()
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "Multiply") do
@@ -110,7 +106,6 @@ defmodule RPNCalculator.RPNCalculator do
       [x | [y | tail]] -> [x * y | tail]
       rpn_stack -> rpn_stack
     end)
-    |> clear_input()
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "Divide") do
@@ -120,7 +115,91 @@ defmodule RPNCalculator.RPNCalculator do
       [x | [y | tail]] -> [y / x | tail]
       rpn_stack -> rpn_stack
     end)
-    |> clear_input()
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Power") do
+    rpn_calculator
+    |> update_rpn_stack(fn
+      [x | [y | tail]] -> [:math.pow(x, y) | tail]
+      rpn_stack -> rpn_stack
+    end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Pi") do
+    rpn_calculator
+    |> update_rpn_stack(fn rpn_stack -> [:math.pi() | rpn_stack] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "E") do
+    rpn_calculator
+    |> update_rpn_stack(fn rpn_stack -> [:math.exp(1) | rpn_stack] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Reciprocal") do
+    rpn_calculator
+    |> update_rpn_stack(fn
+      [0 | _] = rpn_stack -> rpn_stack
+      [x | tail] -> [1 / x | tail]
+    end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Sqrt") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [:math.sqrt(x) | tail] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Exp") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [:math.exp(x) | tail] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Log") do
+    rpn_calculator
+    |> update_rpn_stack(fn
+      [0 | _] = rpn_stack -> rpn_stack
+      [x | tail] -> [:math.log10(x) | tail]
+    end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Ln") do
+    rpn_calculator
+    |> update_rpn_stack(fn
+      [0 | _] = rpn_stack -> rpn_stack
+      [x | tail] -> [:math.log(x) | tail]
+    end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Sin") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [:math.sin(x / 180 * :math.pi()) | tail] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Cos") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [:math.cos(x / 180 * :math.pi()) | tail] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Tan") do
+    rpn_calculator
+    |> update_rpn_stack(fn
+      [0 | _] = rpn_stack -> rpn_stack
+      [x | tail] -> [:math.tan(x / 180 * :math.pi()) | tail]
+    end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "ArcSin") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [:math.asin(x) / :math.pi() * 180 | tail] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "ArcCos") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [:math.acos(x) / :math.pi() * 180 | tail] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "ArcTan") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [:math.atan(x) / :math.pi() * 180 | tail] end)
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "XY") do
@@ -129,7 +208,6 @@ defmodule RPNCalculator.RPNCalculator do
       [x | [y | tail]] -> [y | [x | tail]]
       rpn_stack -> rpn_stack
     end)
-    |> clear_input()
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "RollDown") do
@@ -138,7 +216,6 @@ defmodule RPNCalculator.RPNCalculator do
       {top, rest} = List.pop_at(rpn_stack, 0)
       rest ++ [top]
     end)
-    |> clear_input()
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "RollUp") do
@@ -147,7 +224,6 @@ defmodule RPNCalculator.RPNCalculator do
       {bottom, rest} = List.pop_at(rpn_stack, -1)
       [bottom] ++ rest
     end)
-    |> clear_input()
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "Drop") do
@@ -156,7 +232,6 @@ defmodule RPNCalculator.RPNCalculator do
       [top] -> [top]
       [_top | tail] -> tail
     end)
-    |> clear_input()
   end
 
   def process_keys(%__MODULE__{} = rpn_calculator, keys) when is_list(keys) do
@@ -172,8 +247,13 @@ defmodule RPNCalculator.RPNCalculator do
     top_of_stack
   end
 
-  defp update_rpn_stack(%__MODULE__{} = rpn_calculator, fun) do
-    Map.update!(rpn_calculator, :rpn_stack, fun)
+  defp update_rpn_stack(%__MODULE__{} = rpn_calculator, fun, opts \\ [clear_input: true]) do
+    if Keyword.get(opts, :clear_input) do
+      Map.update!(rpn_calculator, :rpn_stack, fun)
+      |> clear_input()
+    else
+      Map.update!(rpn_calculator, :rpn_stack, fun)
+    end
   end
 
   defp update_input_digits(%__MODULE__{} = rpn_calculator, fun) do
@@ -188,7 +268,7 @@ defmodule RPNCalculator.RPNCalculator do
     new_x = parse_input(rpn_calculator.input_digits)
 
     rpn_calculator
-    |> update_rpn_stack(fn [_top | tail] -> [new_x | tail] end)
+    |> update_rpn_stack(fn [_top | tail] -> [new_x | tail] end, clear_input: false)
     |> update_computed?(false)
   end
 
