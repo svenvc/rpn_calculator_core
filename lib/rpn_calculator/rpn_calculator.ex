@@ -1,6 +1,24 @@
 defmodule RPNCalculator.RPNCalculator do
   defstruct rpn_stack: [0], input_digits: "", computed?: false
 
+  @known_keys ~w(
+    0 1 2 3 4 5 6 7 8 9
+    Dot Sign
+    Enter XY RollDown RollUp Drop
+    Add Subtract Multiply Divide
+    Backspace Clear
+    EE Pi E
+    Sin Cos Tan
+    ArcSin ArcCos ArcTan
+    Power Exp
+    Square Sqrt
+    Log Ln
+    Reciprocal)
+
+  def known_keys, do: @known_keys
+
+  @max_input_length 16
+
   def process_key(%__MODULE__{} = rpn_calculator, key)
       when key in ~w(0 1 2 3 4 5 6 7 8 9) do
     if rpn_calculator.input_digits == "" and rpn_calculator.computed? do
@@ -12,6 +30,8 @@ defmodule RPNCalculator.RPNCalculator do
     |> update_input_digits(fn input_digits ->
       cond do
         input_digits == "0" -> key
+        String.length(input_digits) >= @max_input_length -> input_digits
+        String.last(input_digits) == "e" && key == "0" -> input_digits
         true -> input_digits <> key
       end
     end)
@@ -21,13 +41,17 @@ defmodule RPNCalculator.RPNCalculator do
   def process_key(%__MODULE__{} = rpn_calculator, "Dot") do
     rpn_calculator
     |> update_input_digits(fn input_digits ->
-      if String.contains?(input_digits, ".") do
+      if String.contains?(input_digits, [".", "e"]) do
         input_digits
       else
         if input_digits == "" do
           "0."
         else
-          input_digits <> "."
+          if String.contains?(input_digits, "e") do
+            input_digits
+          else
+            input_digits <> "."
+          end
         end
       end
     end)
@@ -38,10 +62,26 @@ defmodule RPNCalculator.RPNCalculator do
     rpn_calculator =
       rpn_calculator
       |> update_input_digits(fn input_digits ->
-        cond do
-          input_digits == "" -> ""
-          String.first(input_digits) == "-" -> String.slice(input_digits, 1..-1//1)
-          true -> "-" <> input_digits
+        if String.contains?(input_digits, "e") do
+          cond do
+            String.last(input_digits) == "e" ->
+              input_digits
+
+            true ->
+              [mantisse, exponent] = String.split(input_digits, "e")
+
+              if String.first(exponent) == "-" do
+                mantisse <> "e" <> String.trim_leading(exponent, "-")
+              else
+                mantisse <> "e-" <> exponent
+              end
+          end
+        else
+          cond do
+            input_digits == "" -> ""
+            String.first(input_digits) == "-" -> String.slice(input_digits, 1..-1//1)
+            true -> "-" <> input_digits
+          end
         end
       end)
 
@@ -55,13 +95,17 @@ defmodule RPNCalculator.RPNCalculator do
     end
   end
 
-  def process_key(%__MODULE__{} = rpn_calculator, "Clear") do
+  def process_key(%__MODULE__{} = rpn_calculator, "EE") do
     rpn_calculator
-    |> update_rpn_stack(fn rpn_stack ->
-      if rpn_calculator.input_digits == "" do
-        [0]
+    |> update_input_digits(fn input_digits ->
+      if input_digits == "" || String.contains?(input_digits, "e") do
+        input_digits
       else
-        rpn_stack
+        if String.contains?(input_digits, ".") do
+          input_digits <> "e"
+        else
+          input_digits <> ".0e"
+        end
       end
     end)
     |> update_x()
@@ -73,6 +117,18 @@ defmodule RPNCalculator.RPNCalculator do
       cond do
         String.length(input_digits) == 2 and String.first(input_digits) == "-" -> ""
         true -> String.slice(input_digits, 0..-2//1)
+      end
+    end)
+    |> update_x()
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Clear") do
+    rpn_calculator
+    |> update_rpn_stack(fn rpn_stack ->
+      if rpn_calculator.input_digits == "" do
+        [0]
+      else
+        rpn_stack
       end
     end)
     |> update_x()
@@ -127,12 +183,18 @@ defmodule RPNCalculator.RPNCalculator do
 
   def process_key(%__MODULE__{} = rpn_calculator, "Pi") do
     rpn_calculator
-    |> update_rpn_stack(fn rpn_stack -> [:math.pi() | rpn_stack] end)
+    |> update_rpn_stack(fn
+      [0] -> [:math.pi()]
+      rpn_stack -> [:math.pi() | rpn_stack]
+    end)
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "E") do
     rpn_calculator
-    |> update_rpn_stack(fn rpn_stack -> [:math.exp(1) | rpn_stack] end)
+    |> update_rpn_stack(fn
+      [0] -> [:math.exp(1)]
+      rpn_stack -> [:math.exp(1) | rpn_stack]
+    end)
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "Reciprocal") do
@@ -146,6 +208,11 @@ defmodule RPNCalculator.RPNCalculator do
   def process_key(%__MODULE__{} = rpn_calculator, "Sqrt") do
     rpn_calculator
     |> update_rpn_stack(fn [x | tail] -> [:math.sqrt(x) | tail] end)
+  end
+
+  def process_key(%__MODULE__{} = rpn_calculator, "Square") do
+    rpn_calculator
+    |> update_rpn_stack(fn [x | tail] -> [x * x | tail] end)
   end
 
   def process_key(%__MODULE__{} = rpn_calculator, "Exp") do
@@ -247,6 +314,27 @@ defmodule RPNCalculator.RPNCalculator do
     top_of_stack
   end
 
+  @max_integer 9999_999_999_999_999
+  @max_output_length 18
+
+  def render_number(number) do
+    integer = trunc(number)
+
+    cond do
+      number == integer && abs(integer) <= @max_integer ->
+        to_string(integer)
+
+      true ->
+        string = :erlang.float_to_binary(number * 1.0, [:short])
+
+        if String.length(string) > @max_output_length do
+          :erlang.float_to_binary(number * 1.0, [{:scientific, 8}])
+        else
+          string
+        end
+    end
+  end
+
   defp update_rpn_stack(%__MODULE__{} = rpn_calculator, fun, opts \\ [clear_input: true]) do
     if Keyword.get(opts, :clear_input) do
       Map.update!(rpn_calculator, :rpn_stack, fun)
@@ -281,14 +369,22 @@ defmodule RPNCalculator.RPNCalculator do
   defp parse_input(""), do: 0
 
   defp parse_input(input_digits) do
-    if String.contains?(input_digits, ".") do
-      if String.last(input_digits) == "." do
-        String.to_integer(String.slice(input_digits, 0..-2//1))
+    if String.contains?(input_digits, "e") do
+      if String.last(input_digits) == "e" do
+        String.to_float(String.slice(input_digits, 0..-2//1))
       else
         String.to_float(input_digits)
       end
     else
-      String.to_integer(input_digits)
+      if String.contains?(input_digits, ".") do
+        if String.last(input_digits) == "." do
+          String.to_integer(String.slice(input_digits, 0..-2//1))
+        else
+          String.to_float(input_digits)
+        end
+      else
+        String.to_integer(input_digits)
+      end
     end
   end
 end

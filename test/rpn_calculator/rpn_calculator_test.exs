@@ -19,6 +19,18 @@ defmodule RPNCalculator.RPNCalculatorTest do
     assert RPNCalculator.top_of_stack(rpn_calculator) == -1.5
   end
 
+  test "input editing scientific" do
+    rpn_calculator =
+      %RPNCalculator{}
+      |> RPNCalculator.process_keys([
+        "1", "2", "Sign", "Backspace", "5", "Dot", "5",
+        "EE", "Backspace",
+        "5", "EE", "3", "1", "Sign", "Backspace",
+        "2"])
+
+    assert RPNCalculator.top_of_stack(rpn_calculator) == -15.55e-32
+  end
+
   test "xy swap" do
     rpn_calculator =
       %RPNCalculator{}

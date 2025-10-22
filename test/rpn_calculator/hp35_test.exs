@@ -149,6 +149,75 @@ defmodule RPNCalculator.HP35Test do
     ])
   end
 
+  # page 10
+
+  test "5% compound interest" do
+    assert_sequence([
+      {"17", 17},
+      {"Enter", 17},
+      {"1.05", 1.05},
+      {"Power", :math.pow(1.05, 17)}
+    ])
+  end
+
+  test "find growth rate compounded annually" do
+    assert_sequence([
+      {"1972", 1972},
+      {"Enter", 1972},
+      {"1965", 1965},
+      {"Subtract", 7},
+      {"Reciprocal", 1/7},
+      {"1.37e9", 1.37e9},
+      {"Enter", 1.37e9},
+      {"926e6", 926.0e6},
+      {"Divide", 1.37e9 / 926.0e6},
+      {"Power", :math.pow(1.37e9 / 926.0e6, 1/7)}
+    ])
+  end
+
+  # page 11
+
+  test "monthly payment on loan" do
+    assert_sequence([
+      {"30000", 30_000},
+      {"Enter", 30_000},
+      {".005", 0.005},
+      {"Multiply", 30_000 * 0.005},
+      {"1", 1},
+      {"Enter", 1},
+      {"360", 360},
+      {"Enter", 360},
+      {"1.005", 1.005},
+      {"Power", :math.pow(1.005, 360)},
+      {"Reciprocal", 1 / :math.pow(1.005, 360)},
+      {"Subtract", 1 - 1 / :math.pow(1.005, 360)},
+      {"Divide", 30_000 * 0.005 / (1 - 1 / :math.pow(1.005, 360))}
+    ])
+  end
+
+  # page 12-13
+
+  test "exponent entry 15.6e12" do
+    assert_sequence([
+      {"15.6", 15.6},
+      {"EE", 15.6},
+      {"12", 15.6e12}
+    ])
+  end
+
+  # page 13
+
+  # 1e6
+
+  test "mass of an electron" do
+    assert_sequence([
+      {"9.109", 9.109},
+      {"EE", 9.109},
+      {"31", 9.109e31},
+      {"Sign", 9.109e-31}
+    ])
+  end
+
   # page 16-17
 
   test "9-th root of 512" do
@@ -231,11 +300,12 @@ defmodule RPNCalculator.HP35Test do
         sub_keys = String.split(key, "", trim: true)
 
         rpn_calculator =
-          if Enum.all?(sub_keys, fn x -> x in ~w(0 1 2 3 4 5 6 7 8 9 . -) end) do
+          if Enum.all?(sub_keys, fn x -> x in ~w(0 1 2 3 4 5 6 7 8 9 . - e) end) do
             sub_keys =
               Enum.map(sub_keys, fn
                 "." -> "Dot"
                 "-" -> "Sign"
+                "e" -> "EE"
                 key -> key
               end)
 
