@@ -3,6 +3,14 @@ defmodule RPNCalculator.RPNCalculatorTest do
 
   alias RPNCalculator.RPNCalculator
 
+  test "initial state" do
+    rpn_calculator = %RPNCalculator{}
+
+    assert RPNCalculator.top_of_stack(rpn_calculator) == 0
+    assert rpn_calculator.rpn_stack == [0]
+    assert rpn_calculator.input_digits == ""
+  end
+
   test "simple addition" do
     rpn_calculator =
       %RPNCalculator{}
@@ -23,10 +31,23 @@ defmodule RPNCalculator.RPNCalculatorTest do
     rpn_calculator =
       %RPNCalculator{}
       |> RPNCalculator.process_keys([
-        "1", "2", "Sign", "Backspace", "5", "Dot", "5",
-        "EE", "Backspace",
-        "5", "EE", "3", "1", "Sign", "Backspace",
-        "2"])
+        "1",
+        "2",
+        "Sign",
+        "Backspace",
+        "5",
+        "Dot",
+        "5",
+        "EE",
+        "Backspace",
+        "5",
+        "EE",
+        "3",
+        "1",
+        "Sign",
+        "Backspace",
+        "2"
+      ])
 
     assert RPNCalculator.top_of_stack(rpn_calculator) == -15.55e-32
   end
