@@ -5,7 +5,26 @@ defmodule RPNCalculator.HP35Test do
 
   @moduledoc """
   These are literal examples from the original HP-35 manual from the early seventies.
+
+  See https://literature.hpcalc.org/items/735
   """
+
+  # page iii
+
+  test "approximate pi" do
+    assert_sequence([
+      {"355", 355},
+      {"Enter", 355},
+      {"113", 113},
+      {"Divide", 355/113},
+      {"Pi", :math.pi()},
+      {"Subtract", 355/113 - :math.pi()},
+      {"Pi", :math.pi()},
+      {"Divide", (355/113 - :math.pi()) / :math.pi()},
+      {"100", 100},
+      {"Multiply", (355/113 - :math.pi()) / :math.pi() * 100}
+    ])
+  end
 
   # page 3
 
