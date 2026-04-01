@@ -16,13 +16,13 @@ defmodule RPNCalculator.HP35Test do
       {"355", 355},
       {"Enter", 355},
       {"113", 113},
-      {"Divide", 355/113},
+      {"Divide", 355 / 113},
       {"Pi", :math.pi()},
-      {"Subtract", 355/113 - :math.pi()},
+      {"Subtract", 355 / 113 - :math.pi()},
       {"Pi", :math.pi()},
-      {"Divide", (355/113 - :math.pi()) / :math.pi()},
+      {"Divide", (355 / 113 - :math.pi()) / :math.pi()},
       {"100", 100},
-      {"Multiply", (355/113 - :math.pi()) / :math.pi() * 100}
+      {"Multiply", (355 / 113 - :math.pi()) / :math.pi() * 100}
     ])
   end
 
@@ -185,12 +185,12 @@ defmodule RPNCalculator.HP35Test do
       {"Enter", 1972},
       {"1965", 1965},
       {"Subtract", 7},
-      {"Reciprocal", 1/7},
+      {"Reciprocal", 1 / 7},
       {"1.37e9", 1.37e9},
       {"Enter", 1.37e9},
       {"926e6", 926.0e6},
       {"Divide", 1.37e9 / 926.0e6},
-      {"Power", :math.pow(1.37e9 / 926.0e6, 1/7)}
+      {"Power", :math.pow(1.37e9 / 926.0e6, 1 / 7)}
     ])
   end
 
